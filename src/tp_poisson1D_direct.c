@@ -29,7 +29,7 @@ int main(int argc,char *argv[])
   double temp, relres;
 
   NRHS=1;
-  nbpoints=10;
+  nbpoints=102;
   la=nbpoints-2;
   T0=-5.0;
   T1=5.0;
@@ -44,9 +44,9 @@ int main(int argc,char *argv[])
   set_dense_RHS_DBC_1D(RHS,&la,&T0,&T1);
   set_analytical_solution_DBC_1D(EX_SOL, X, &la, &T0, &T1);
   
-  write_vec(RHS, &la, "RHS.dat");
-  write_vec(EX_SOL, &la, "EX_SOL.dat");
-  write_vec(X, &la, "X_grid.dat");
+  /* write_vec(RHS, &la, "RHS.dat"); */
+  /* write_vec(EX_SOL, &la, "EX_SOL.dat"); */
+  /* write_vec(X, &la, "X_grid.dat"); */
 
   kv=1; 
   ku=1;
@@ -57,7 +57,7 @@ int main(int argc,char *argv[])
 
   set_GB_operator_colMajor_poisson1D(AB, &lab, &la, &kv);
 
-  write_GB_operator_colMajor_poisson1D(AB, &lab, &la, "AB.dat");
+  /* write_GB_operator_colMajor_poisson1D(AB, &lab, &la, "AB.dat"); */
 
   printf("Solution with LAPACK\n");
   /* LU Factorization */
@@ -68,7 +68,7 @@ int main(int argc,char *argv[])
   /* LU for tridiagonal matrix  (can replace dgbtrf_) */
   // ierr = dgbtrftridiag(&la, &la, &kl, &ku, AB, &lab, ipiv, &info);
 
-  write_GB_operator_colMajor_poisson1D(AB, &lab, &la, "LU.dat");
+  /* write_GB_operator_colMajor_poisson1D(AB, &lab, &la, "LU.dat"); */
   
   /* Solution (Triangular) */
   if (info==0){
@@ -77,16 +77,31 @@ int main(int argc,char *argv[])
   }else{
     printf("\n INFO = %d\n",info);
   }
+  // RHS now contains the solution x
 
   /* It can also be solved with dgbsv */
   // TODO : use dgbsv
+  // dgbsv_(&la, &kl, &ku, &NRHS, AB, &lab, ipiv, RHS, &la, &info);
 
-  write_xy(RHS, X, &la, "SOL.dat");
+  write_xy(X, RHS, &la, "SOL.dat");
 
   /* Relative forward error */
   // TODO : Compute relative norm of the residual
+  cblas_dscal(la, -1.0, RHS, 1);
+  cblas_daxpy(la, 1.0, EX_SOL, 1, RHS, 1);
+  relres = cblas_dnrm2(la, RHS, 1) / cblas_dnrm2(la, EX_SOL, 1);
   
-  printf("\nThe relative forward error is relres = %e\n",relres);
+  printf("\nThe relative forward error for dgbrf+dgbrs = %e\n",relres);
+
+  set_GB_operator_colMajor_poisson1D(AB, &lab, &la, &kv);
+  set_dense_RHS_DBC_1D(RHS,&la,&T0,&T1);
+  dgbsv_(&la, &kl, &ku, &NRHS, AB, &lab, ipiv, RHS, &la, &info);
+
+  cblas_dscal(la, -1.0, RHS, 1);
+  cblas_daxpy(la, 1.0, EX_SOL, 1, RHS, 1);
+  relres = cblas_dnrm2(la, RHS, 1) / cblas_dnrm2(la, EX_SOL, 1);
+
+  printf("\nThe relative forward error for dgbsv = %e\n",relres);
 
   free(RHS);
   free(EX_SOL);

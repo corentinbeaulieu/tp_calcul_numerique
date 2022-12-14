@@ -7,14 +7,13 @@
 
 void set_GB_operator_colMajor_poisson1D(double* AB, int *lab, int *la, int *kv){
 
-  const unsigned int nbNonEmptyLines = *lab - *kv;
 
   for(int i = 0; i < *la; i++) {
     for(int j = 0; j < *(lab); j++) {
-      if (j >= nbNonEmptyLines) {
+      if (j < *kv) {
         AB[i * *lab + j] = 0;
       }
-      else if(j == 1) {
+      else if(j == *kv + 1) {
         AB[i * *lab + j] = 2;
       }
       else {
@@ -22,8 +21,8 @@ void set_GB_operator_colMajor_poisson1D(double* AB, int *lab, int *la, int *kv){
       }
     }
   }
-  AB[0] = 0;
-  AB[(*lab) * (*la) - *kv -1] = 0;
+  AB[*kv] = 0;
+  AB[(*lab) * (*la) -1] = 0;
 
 }
 
