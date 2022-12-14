@@ -12,11 +12,15 @@ int main(int argc,char *argv[])
 {
   int ierr;
   int jj;
+  // nbpoints -> nb lignes de A,                             la -> nombre de colonnes de A
   int nbpoints, la;
+  // ku -> nb de surdiagonales de A,                         kl -> nombre de sousdiagonales de A
+  // kv -> nb sousdiagonales en plus pour le stockage de LU, lab -> ld de AB ie nombre de lignes de AB
   int ku, kl, kv, lab;
   int *ipiv;
   int info;
   int NRHS;
+  // T0 -> solution initiale,                                T1 -> solution finale
   double T0, T1;
   double *RHS, *EX_SOL, *X;
   double **AAB;
@@ -44,7 +48,7 @@ int main(int argc,char *argv[])
   write_vec(EX_SOL, &la, "EX_SOL.dat");
   write_vec(X, &la, "X_grid.dat");
 
-  kv=1;
+  kv=1; 
   ku=1;
   kl=1;
   lab=kv+kl+ku+1;
@@ -53,7 +57,7 @@ int main(int argc,char *argv[])
 
   set_GB_operator_colMajor_poisson1D(AB, &lab, &la, &kv);
 
-  // write_GB_operator_colMajor_poisson1D(AB, &lab, &la, "AB.dat");
+  write_GB_operator_colMajor_poisson1D(AB, &lab, &la, "AB.dat");
 
   printf("Solution with LAPACK\n");
   /* LU Factorization */
@@ -64,7 +68,7 @@ int main(int argc,char *argv[])
   /* LU for tridiagonal matrix  (can replace dgbtrf_) */
   // ierr = dgbtrftridiag(&la, &la, &kl, &ku, AB, &lab, ipiv, &info);
 
-  // write_GB_operator_colMajor_poisson1D(AB, &lab, &la, "LU.dat");
+  write_GB_operator_colMajor_poisson1D(AB, &lab, &la, "LU.dat");
   
   /* Solution (Triangular) */
   if (info==0){
