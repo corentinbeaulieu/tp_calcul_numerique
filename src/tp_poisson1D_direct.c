@@ -3,8 +3,11 @@
 /* This file contains the main function   */
 /* to solve the Poisson 1D problem        */
 /******************************************/
+#include <time.h>
+
 #include "lib_poisson1D.h"
 #include "atlas_headers.h"
+
 
 int main(int argc,char *argv[])
 /* ** argc: Nombre d'arguments */
@@ -26,10 +29,11 @@ int main(int argc,char *argv[])
   double **AAB;
   double *AB;
 
-  double temp, relres;
+  double elapsed, relres;
+  struct timespec before, after;
 
   NRHS=1;
-  nbpoints=102;
+  nbpoints=1000002;
   la=nbpoints-2;
   T0=-5.0;
   T1=5.0;
@@ -63,12 +67,17 @@ int main(int argc,char *argv[])
   /* LU Factorization */
   info=0;
   ipiv = (int *) calloc(la, sizeof(int));
+
+
+  clock_gettime(CLOCK_MONOTONIC_RAW, &before);
+
+
   dgbtrf_(&la, &la, &kl, &ku, AB, &lab, ipiv, &info);
 
   /* LU for tridiagonal matrix  (can replace dgbtrf_) */
   // ierr = dgbtrftridiag(&la, &la, &kl, &ku, AB, &lab, ipiv, &info);
 
-  /* write_GB_operator_colMajor_poisson1D(AB, &lab, &la, "LU.dat"); */
+   /* write_GB_operator_colMajor_poisson1D(AB, &lab, &la, "LU1.dat"); */ 
   
   /* Solution (Triangular) */
   if (info==0){
@@ -77,11 +86,14 @@ int main(int argc,char *argv[])
   }else{
     printf("\n INFO = %d\n",info);
   }
+
+  clock_gettime(CLOCK_MONOTONIC_RAW, &after);
+
+  elapsed = (double) after.tv_sec + (double) after.tv_nsec /1000000000 - ((double) before.tv_sec + (double) before.tv_nsec /1000000000);
   // RHS now contains the solution x
 
   /* It can also be solved with dgbsv */
   // TODO : use dgbsv
-  // dgbsv_(&la, &kl, &ku, &NRHS, AB, &lab, ipiv, RHS, &la, &info);
 
   write_xy(X, RHS, &la, "SOL.dat");
 
@@ -91,17 +103,55 @@ int main(int argc,char *argv[])
   cblas_daxpy(la, 1.0, EX_SOL, 1, RHS, 1);
   relres = cblas_dnrm2(la, RHS, 1) / cblas_dnrm2(la, EX_SOL, 1);
   
-  printf("\nThe relative forward error for dgbrf+dgbrs = %e\n",relres);
+  printf("\nThe relative forward error for dgbrf+dgbrs = %e\n\
+      The execution time = %f s\n",relres, elapsed);
 
   set_GB_operator_colMajor_poisson1D(AB, &lab, &la, &kv);
   set_dense_RHS_DBC_1D(RHS,&la,&T0,&T1);
+
+  clock_gettime(CLOCK_MONOTONIC_RAW, &before);
+
   dgbsv_(&la, &kl, &ku, &NRHS, AB, &lab, ipiv, RHS, &la, &info);
+
+  clock_gettime(CLOCK_MONOTONIC_RAW, &after);
+
+  elapsed = (double) after.tv_sec + (double) after.tv_nsec /1000000000 - ((double) before.tv_sec + (double) before.tv_nsec /1000000000);
 
   cblas_dscal(la, -1.0, RHS, 1);
   cblas_daxpy(la, 1.0, EX_SOL, 1, RHS, 1);
   relres = cblas_dnrm2(la, RHS, 1) / cblas_dnrm2(la, EX_SOL, 1);
 
-  printf("\nThe relative forward error for dgbsv = %e\n",relres);
+  printf("\nThe relative forward error for dgbsv = %e\n\
+      The execution time = %f s\n",relres, elapsed);
+
+  set_GB_operator_colMajor_poisson1D(AB, &lab, &la, &kv);
+  set_dense_RHS_DBC_1D(RHS,&la,&T0,&T1);
+
+  clock_gettime(CLOCK_MONOTONIC_RAW, &before);
+
+  ierr = dgbtrftridiag(&la, &la, &kl, &ku, AB, &lab, ipiv, &info);
+
+  /* write_GB_operator_colMajor_poisson1D(AB, &lab, &la, "LU.dat"); */ 
+  
+  /* Solution (Triangular) */
+  if (info==0){
+    dgbtrs_("N", &la, &kl, &ku, &NRHS, AB, &lab, ipiv, RHS, &la, &info);
+    if (info!=0){printf("\n INFO DGBTRS = %d\n",info);}
+  }else{
+    printf("\n INFO = %d\n",info);
+  }
+
+  clock_gettime(CLOCK_MONOTONIC_RAW, &after);
+
+  elapsed = (double) after.tv_sec + (double) after.tv_nsec /1000000000 - ((double) before.tv_sec + (double) before.tv_nsec /1000000000);
+
+  cblas_dscal(la, -1.0, RHS, 1);
+  cblas_daxpy(la, 1.0, EX_SOL, 1, RHS, 1);
+  relres = cblas_dnrm2(la, RHS, 1) / cblas_dnrm2(la, EX_SOL, 1);
+
+  printf("\nThe relative forward error for dgbtrftridiag = %e\n\
+      The execution time = %f s\n",relres, elapsed);
+
 
   free(RHS);
   free(EX_SOL);

@@ -169,5 +169,45 @@ int indexABCol(int i, int j, int *lab){
   return 0;
 }
 int dgbtrftridiag(int *la, int*n, int *kl, int *ku, double *AB, int *lab, int *ipiv, int *info){
+
+  if(*la < 0) {
+    *info = -1;
+  }
+  else if(*n < 0) {
+    *info = -2;
+  }
+  else if(*kl != 1) {
+    *info = -3;
+  }
+  else if(*ku != 1) {
+   *info = -4; 
+  }
+  else if(AB == NULL) {
+   *info = -5;
+  }
+  else if(*lab < 3) {
+   *info = -6;
+  }
+  else if(ipiv == NULL) {
+   *info = -7;
+  }
+  else{
+
+    AB[*lab - 1] /= AB[*lab-2];
+    for(int i = 1; i < *n; i++) {
+
+      AB[(i+1) * (*lab) - 2] += AB[i *     (*lab) - 1];
+
+      if(AB[(i+1) * (*lab) -2] == 0) {
+        *info = i;
+        break;
+      }
+
+      AB[(i+1) * (*lab) - 1] /= AB[(i+1) * (*lab) - 2];
+      if(i == *n -1) *info = 0;
+
+    }
+  }
+
   return *info;
 }
