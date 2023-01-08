@@ -6,28 +6,22 @@
 #include "lib_poisson1D.h"
 #include "atlas_headers.h"
 
-int main(int argc,char *argv[])
-    /* ** argc: Number of arguments */
-    /* ** argv: Values of arguments */
+int main(void)
 {
     int ierr;
-    int jj;
     int nbpoints, la;
     int ku, kl, lab, kv;
-    int *ipiv;
-    int info;
-    int NRHS;
+    int *ipiv = NULL;
     double T0, T1;
     double *RHS, *SOL, *EX_SOL, *X;
     double *AB;
     double *MB;
 
-    double temp, relres;
+    double relres;
 
     double opt_alpha;
 
     /* Size of the problem */
-    NRHS=1;
     nbpoints=12;
     la=nbpoints-2;
 
@@ -78,73 +72,75 @@ int main(int argc,char *argv[])
      * free(eigval); */
 
     /* Solve */
-    double tol=1e-3;
-    int maxit=10000;
+    double tol=1e-4;
+    int maxit=200000;
     double *resvec;
     int nbite=0;
 
-    resvec=(double *) calloc(maxit, sizeof(double));
+    resvec = (double *) calloc(maxit + 1, sizeof(double));
 
     /* Solve with Richardson alpha */
     richardson_alpha(AB, RHS, SOL, &opt_alpha, &lab, &la, &ku, &kl, &tol, &maxit, resvec, &nbite);
     printf("\nNumber of iteration of Richardson is   : %5d\n", nbite);
 
-    /* Write richardson_alpha solution */
+    /* uncomment to Write richardson_alpha solution */
     // write_vec(SOL, &la, "SOL_RICH.dat");
 
     /* Write convergence history */
     // The increment of nbite is to write final backward error as well  
     // We have nbite + 1 res [0; nbite]
     nbite++;
-    //write_vec(resvec, &nbite, "RESVEC_RICH.dat");
+    write_vec(resvec, &nbite, "RESVEC_RICH.dat");
 
     /* Compute forward error */
     cblas_dscal(la, -1.0, SOL, 1);
     cblas_daxpy(la, 1.0, EX_SOL, 1, SOL, 1);
     relres = cblas_dnrm2(la, SOL, 1) / cblas_dnrm2(la, EX_SOL, 1);
-    printf("The relative forward error for Richardson is      : %1.3e\nThe relative backward error for Richardson is     : %1.3e\n",
+    printf("The relative forward  error for Richardson is    : %1.3e\nThe relative backward error for Richardson is    : %1.3e\n",
             relres,
             resvec[nbite-1]);
 
+    /********************************************************/
     /*** Convergence analysis ***/
 
-    /* const int nbAlpha = 10; */
+    const int nbAlpha = 100;
 
-    /* // The method diverge for alpha >= 0.6 at least */ 
-    /* const double h = (double) 0.6/nbAlpha; */
-    /* int *convergence = aligned_alloc(32, nbAlpha * sizeof(int)); */
-    /* double *tabAlpha = aligned_alloc(32, nbAlpha * sizeof(double)); */
-    /* double alpha = 0.0; */
+    // The method diverge for alpha >= 0.52 at least 
+    const double h = (double) 0.52/nbAlpha;
+    int *convergence = aligned_alloc(32, nbAlpha * sizeof(int));
+    double *tabAlpha = aligned_alloc(32, nbAlpha * sizeof(double));
+    double alpha = 0.0;
 
-    /* /1* Compute the solution for different alpha *1/ */
-    /* for(int i = 0; i < nbAlpha; i++) { */
-    /*     nbite = 0; */
+    /* Compute the solution for different alpha */
+    for(int i = 0; i < nbAlpha; i++) {
+        nbite = 0;
 
-    /*     set_dense_RHS_DBC_1D(RHS,&la,&T0,&T1); */
-    /*     memset(SOL, 0, la * sizeof(double)); */
-    /*     memset(resvec, 0xff, maxit * sizeof(double)); */
+        set_dense_RHS_DBC_1D(RHS,&la,&T0,&T1);
+        memset(SOL, 0, la * sizeof(double));
+        memset(resvec, 0xff, (maxit + 1) * sizeof(double));
 
-    /*     alpha = i*h; */
-    /*     tabAlpha[i] = alpha; */
+        alpha = i*h;
+        tabAlpha[i] = alpha;
 
-    /*     richardson_alpha(AB, RHS, SOL, &alpha, &lab, &la, &ku, &kl, &tol, &maxit, resvec, &nbite); */
+        richardson_alpha(AB, RHS, SOL, &alpha, &lab, &la, &ku, &kl, &tol, &maxit, resvec, &nbite);
 
-    /*     convergence[i] = nbite; */
-    /* } */
+        convergence[i] = nbite;
+    }
 
-    /* /1* Write convergence analysis results *1/ */
-    /* FILE *file = fopen("ALPHA.dat", "w"); */
-    /* for(int i = 0; i < nbAlpha; i++) { */
+    /* Write convergence analysis results */
+    FILE *file = fopen("ALPHA.dat", "w");
+    for(int i = 0; i < nbAlpha; i++) {
 
-    /*     fprintf(file, "%.16f; %5d\n", tabAlpha[i], convergence[i]); */
+        fprintf(file, "%.16f; %5d\n", tabAlpha[i], convergence[i]);
 
-    /* } */
+    }
 
-    /* fclose(file); */
-    /* free(tabAlpha); */
-    /* free(convergence); */
+    fclose(file);
+    free(tabAlpha);
+    free(convergence);
 
 
+    /********************************************************/
     /*** Richardson General Tridiag ***/
 
     /* get MB (:=M, D for Jacobi, (D-E) for Gauss-seidel) */
@@ -159,7 +155,7 @@ int main(int argc,char *argv[])
 
     set_dense_RHS_DBC_1D(RHS,&la,&T0,&T1);
     memset(SOL, 0, la * sizeof(double));
-    memset(resvec, 0xff, maxit * sizeof(double));
+    memset(resvec, 0xff, (maxit + 1) * sizeof(double));
 
     extract_MB_jacobi_tridiag(AB, MB, &lab, &la, &ku, &kl, &kv);
 
@@ -177,13 +173,13 @@ int main(int argc,char *argv[])
     // The increment of nbite is to write final backward error as well  
     // We have nbite + 1 res [0; nbite]
     nbite++;
-    //write_vec(resvec, &nbite, "RESVEC_JACOBI.dat");
+    write_vec(resvec, &nbite, "RESVEC_JACOBI.dat");
 
     /* Compute and print forward and backward errors */
     cblas_dscal(la, -1.0, SOL, 1);
     cblas_daxpy(la, 1.0, EX_SOL, 1, SOL, 1);
     relres = cblas_dnrm2(la, SOL, 1) / cblas_dnrm2(la, EX_SOL, 1);
-    printf("The relative forward error for Jacobi is          : %1.3e\nThe relative backward error for Jacobi is         : %1.3e\n",
+    printf("The relative forward  error for Jacobi is        : %1.3e\nThe relative backward error for Jacobi is        : %1.3e\n",
             relres,
             resvec[nbite-1]);
 
@@ -191,7 +187,7 @@ int main(int argc,char *argv[])
 
     set_dense_RHS_DBC_1D(RHS,&la,&T0,&T1);
     memset(SOL, 0, la * sizeof(double));
-    memset(resvec, 0xff, maxit * sizeof(double));
+    memset(resvec, 0xff, (maxit + 1) * sizeof(double));
 
     extract_MB_gauss_seidel_tridiag(AB, MB, &lab, &la, &ku, &kl, &kv);
 
@@ -209,16 +205,126 @@ int main(int argc,char *argv[])
     // The increment of nbite is to write final backward error as well  
     // We have nbite + 1 res [0; nbite]
     nbite++;
-    //write_vec(resvec, &nbite, "RESVEC_GAUSS_SEIDEL.dat");
+    write_vec(resvec, &nbite, "RESVEC_GAUSS_SEIDEL.dat");
 
     /* Compute and print forward and backward errors */
     cblas_dscal(la, -1.0, SOL, 1);
     cblas_daxpy(la, 1.0, EX_SOL, 1, SOL, 1);
     relres = cblas_dnrm2(la, SOL, 1) / cblas_dnrm2(la, EX_SOL, 1);
-    printf("The relative forward error for Gauss-Seidel is    : %1.3e\nThe relative backward error for Gauss-Seidel is   : %1.3e\n",
+    printf("The relative forward  error for Gauss-Seidel is  : %1.3e\nThe relative backward error for Gauss-Seidel is  : %1.3e\n",
             relres,
             resvec[nbite-1]);
 
+    /* Evaluation of performance */
+    // Be cautious exponential augmentation => expensive in memory
+    const int nbMeasure = 12;
+    int *tabTaille = (int *) aligned_alloc(32, nbMeasure * sizeof(int));
+    double *elapsed_alpha = (double *) aligned_alloc(32, nbMeasure * sizeof(double));
+    double *elapsed_jacobi = (double *) aligned_alloc(32, nbMeasure * sizeof(double));
+    double *elapsed_gauss_seidel = (double *) aligned_alloc(32, nbMeasure * sizeof(double));
+
+    int *nbIte_alpha = (int *) aligned_alloc(32, nbMeasure * sizeof(int));
+    int *nbIte_jacobi = (int *) aligned_alloc(32, nbMeasure * sizeof(int));
+    int *nbIte_gauss_seidel = (int *) aligned_alloc(32, nbMeasure * sizeof(int));
+
+    struct timespec before, after;
+
+    nbpoints = 2;
+
+    for(size_t i = 0; i  < nbMeasure; i++) {
+
+        nbpoints *= 2;
+        la = nbpoints - 2;
+        tabTaille[i] = nbpoints;
+
+        RHS = (double *) realloc(RHS, sizeof(double) * la);
+        SOL = (double *) realloc(SOL, sizeof(double) * la); 
+        AB  = (double *) realloc(AB,  sizeof(double) * lab * la);
+        MB  = (double *) realloc(MB,  sizeof(double) * lab * la);
+
+        kv = 0;
+
+        set_dense_RHS_DBC_1D(RHS,&la,&T0,&T1);
+        set_GB_operator_colMajor_poisson1D(AB, &lab, &la, &kv);
+        /** Richardson Alpha opt **/
+
+        memset(SOL, 0, la * sizeof(double));
+        memset(resvec, 0, (maxit + 1) * sizeof(double));
+        nbite = 0;
+
+        clock_gettime(CLOCK_MONOTONIC_RAW, &before);
+        richardson_alpha(AB, RHS, SOL, &opt_alpha, &lab, &la, &ku, &kl, &tol, &maxit, resvec, &nbite);
+        clock_gettime(CLOCK_MONOTONIC_RAW, &after);
+
+        elapsed_alpha[i] = (double) after.tv_sec + (double) after.tv_nsec /1000000000 - ((double) before.tv_sec + (double) before.tv_nsec /1000000000);
+
+        nbIte_alpha[i] = nbite;
+
+        /** Jacobi **/
+        kv = 1;
+
+        memset(SOL, 0, la * sizeof(double));
+        memset(resvec, 0xff, (maxit + 1) * sizeof(double));
+        nbite = 0;
+
+        clock_gettime(CLOCK_MONOTONIC_RAW, &before);
+        extract_MB_jacobi_tridiag(AB, MB, &lab, &la, &ku, &kl, &kv);
+
+        richardson_MB(AB, RHS, SOL, MB, &lab, &la, &ku, &kl, &tol, &maxit, resvec, &nbite);
+        clock_gettime(CLOCK_MONOTONIC_RAW, &after);
+
+        elapsed_jacobi[i] = (double) after.tv_sec + (double) after.tv_nsec /1000000000 - ((double) before.tv_sec + (double) before.tv_nsec /1000000000);
+
+        nbIte_jacobi[i] = nbite;
+        
+       /** Gauss-Seidel **/
+
+        memset(SOL, 0, la * sizeof(double));
+        memset(resvec, 0xff, (maxit + 1) * sizeof(double));
+        nbite = 0;
+
+        clock_gettime(CLOCK_MONOTONIC_RAW, &before);
+        extract_MB_gauss_seidel_tridiag(AB, MB, &lab, &la, &ku, &kl, &kv);
+
+        richardson_MB(AB, RHS, SOL, MB, &lab, &la, &ku, &kl, &tol, &maxit, resvec, &nbite);
+        clock_gettime(CLOCK_MONOTONIC_RAW, &after);
+        elapsed_gauss_seidel[i] = (double) after.tv_sec + (double) after.tv_nsec /1000000000 - ((double) before.tv_sec + (double) before.tv_nsec /1000000000);
+
+        nbIte_gauss_seidel[i] = nbite;
+    }
+
+    /* Write performance analysis results */
+    file = fopen("TIME_ITER.dat", "w");
+    for(int i = 0; i < nbMeasure; i++) {
+
+        fprintf(file, "%8d; %4.6lf; %4.6lf; %4.6lf\n",
+                tabTaille[i],
+                elapsed_alpha[i],
+                elapsed_jacobi[i],
+                elapsed_gauss_seidel[i]);
+    }
+
+    fclose(file);
+    free(elapsed_alpha);
+    free(elapsed_jacobi);
+    free(elapsed_gauss_seidel);
+
+
+    file = fopen("ITER.dat", "w");
+    for(int i = 0; i < nbMeasure; i++) {
+
+        fprintf(file, "%10d; %5d; %5d; %5d\n",
+                tabTaille[i],
+                nbIte_alpha[i],
+                nbIte_jacobi[i],
+                nbIte_gauss_seidel[i]);
+    }
+
+    fclose(file);
+    free(tabTaille);
+    free(nbIte_alpha);
+    free(nbIte_jacobi);
+    free(nbIte_gauss_seidel);
 
     free(ipiv);
     free(resvec);

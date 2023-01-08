@@ -356,9 +356,9 @@ void extract_MB_gauss_seidel_tridiag(double *AB, double *MB, int *lab, int *la,i
 // Resolves a linear system in GB with Richardson general method
 void richardson_MB(double *AB, double *RHS, double *X, double *MB, int *lab, int *la,int *ku, int*kl, double *tol, int *maxit, double *resvec, int *nbite){
 
-    int *ipiv; int info;
-    const int kuMB = 0;
-    ipiv = (int *) calloc(*la, sizeof(int));
+    int *ipiv = (int *) calloc(*la, sizeof(int));
+    int info = 0;
+    const int kuMB = *ku - 1;
 
     double *MBtr = aligned_alloc(32, *la * *lab *sizeof(double));
 

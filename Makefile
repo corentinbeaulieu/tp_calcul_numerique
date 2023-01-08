@@ -14,7 +14,7 @@
 # Follow the example of the machine called "ambre" in the 
 # file ambre.mk
 #
-HOSTNAME=$(shell hostname)
+HOSTNAME=archlinux
 include $(HOSTNAME).mk
 
 # 
@@ -83,4 +83,4 @@ run_tpPoisson1D_direct:
 	bin/tpPoisson1D_direct
 
 clean:
-	rm -f *.o bin/*
+	rm -f *.o bin/* plot/*.png
