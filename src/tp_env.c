@@ -4,9 +4,8 @@
 /* test the environment of compilation    */
 /******************************************/
 #include "tp_env.h"
-int main(int argc,char *argv[])
-/* ** argc: Nombre d'arguments */
-/* ** argv: Valeur des arguments */
+
+int main ( void )
 {
   printf("--------- Test environment of execution for Practical exercises of Numerical Algorithmics ---------\n\n");
   printf("The exponantial value is e = %f \n",M_E);

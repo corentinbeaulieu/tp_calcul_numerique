@@ -8,11 +8,11 @@
 
 
 // Creates a Poisson1D matrix in GB col major of size lab*la
-void set_GB_operator_colMajor_poisson1D(double* AB, int *lab, int *la, int *kv){
-
+void set_GB_operator_colMajor_poisson1D ( double* AB, int *lab, int *la, int *kv ) {
 
     for(int i = 0; i < *la; i++) {
         for(int j = 0; j < *(lab); j++) {
+
             if (j < *kv) {
                 AB[i * *lab + j] = 0;
             }
@@ -24,6 +24,7 @@ void set_GB_operator_colMajor_poisson1D(double* AB, int *lab, int *la, int *kv){
             }
         }
     }
+
     AB[*kv] = 0;
     AB[(*lab) * (*la) -1] = 0;
 
@@ -31,11 +32,11 @@ void set_GB_operator_colMajor_poisson1D(double* AB, int *lab, int *la, int *kv){
 
 
 // Creates an identity matrix in GB col major of size lab*la
-void set_GB_operator_colMajor_poisson1D_Id(double* AB, int *lab, int *la, int *kv){
+void set_GB_operator_colMajor_poisson1D_Id ( double* AB, int *lab, int *la, int *kv ) {
 
     for(int i = 0; i < *la; i++) {
         for(int j = 0; j < *lab; j++) {
-            if(j == 1) {
+            if(j == *kv + 1) {
                 AB[i * *lab + j] = 1;
             }
             else {
@@ -47,7 +48,7 @@ void set_GB_operator_colMajor_poisson1D_Id(double* AB, int *lab, int *la, int *k
 
 
 // Creates a RHS for a simple Poisson1D problem
-void set_dense_RHS_DBC_1D(double* RHS, int* la, double* BC0, double* BC1){
+void set_dense_RHS_DBC_1D ( double* RHS, int* la, double* BC0, double* BC1 ) {
 
     // We have g(i) = 0 forall i
     RHS[0] = *BC0;
@@ -60,7 +61,7 @@ void set_dense_RHS_DBC_1D(double* RHS, int* la, double* BC0, double* BC1){
 
 
 // Resolves a Poisson1D problem in GB with the analytical solution
-void set_analytical_solution_DBC_1D(double* EX_SOL, double* X, int* la, double* BC0, double* BC1){
+void set_analytical_solution_DBC_1D ( double* EX_SOL, double* X, int* la, double* BC0, double* BC1 ) {
 
     // The analytical solution is T(x) = T0 + x(T1-T0) if g(i) = 0 forall i as considered here 
     for(int i = 0; i < *la; i++) {
@@ -72,7 +73,7 @@ void set_analytical_solution_DBC_1D(double* EX_SOL, double* X, int* la, double* 
 
 
 // Creates a uniform discretisation of the interval (0;1)
-void set_grid_points_1D(double* X, int* la){
+void set_grid_points_1D ( double* X, int* la ) {
 
     // X(i) = i/la = ih with h a constant step
     // We have n-1 intervalles between n points and la = npoints - 2
@@ -88,7 +89,8 @@ void set_grid_points_1D(double* X, int* la){
 }
 
 
-void write_GB_operator_rowMajor_poisson1D(double* AB, int* lab, int* la, char* filename){
+void write_GB_operator_rowMajor_poisson1D ( double* AB, int* lab, int* la, char* filename ) {
+
     FILE * file;
     int ii,jj;
     file = fopen(filename, "w");
@@ -108,7 +110,8 @@ void write_GB_operator_rowMajor_poisson1D(double* AB, int* lab, int* la, char* f
 }
 
 
-void write_GB_operator_colMajor_poisson1D(double* AB, int* lab, int* la, char* filename){
+void write_GB_operator_colMajor_poisson1D ( double* AB, int* lab, int* la, char* filename ) {
+
     FILE * file;
     int ii,jj;
     file = fopen(filename, "w");
@@ -128,7 +131,8 @@ void write_GB_operator_colMajor_poisson1D(double* AB, int* lab, int* la, char* f
 }
 
 
-void write_GB2AIJ_operator_poisson1D(double* AB, int* la, char* filename){
+void write_GB2AIJ_operator_poisson1D ( double* AB, int* la, char* filename ) {
+
     FILE * file;
     int jj;
     file = fopen(filename, "w");
@@ -151,7 +155,8 @@ void write_GB2AIJ_operator_poisson1D(double* AB, int* la, char* filename){
 }
 
 
-void write_vec(double* vec, int* la, char* filename){
+void write_vec ( double* vec, int* la, char* filename ) {
+
     int jj;
     FILE * file;
     file = fopen(filename, "w");
@@ -168,7 +173,8 @@ void write_vec(double* vec, int* la, char* filename){
 }  
 
 
-void write_xy(double* vec, double* x, int* la, char* filename){
+void write_xy ( double* vec, double* x, int* la, char* filename ) {
+
     int jj;
     FILE * file;
     file = fopen(filename, "w");
@@ -186,11 +192,11 @@ void write_xy(double* vec, double* x, int* la, char* filename){
 
 
 int indexABCol(int i, int j, int *lab){
-    return 0;
+    return j * (*lab) * i;
 }
 
 // Resolves a linear system in GB where A is tridiagonal
-int dgbtrftridiag(int *la, int*n, int *kl, int *ku, double *AB, int *lab, int *ipiv, int *info){
+int dgbtrftridiag ( int *la, int*n, int *kl, int *ku, double *AB, int *lab, int *ipiv, int *info ) {
 
     // Error gestion inspired by lapack dgbsv's one
     if(*la < 0) {
@@ -238,183 +244,321 @@ int dgbtrftridiag(int *la, int*n, int *kl, int *ku, double *AB, int *lab, int *i
 
 
 // Computes the eigvalues of a Poisson1d matrix of size la*la
-void eig_poisson1D(double* eigval, int *la){
+void eig_poisson1D ( double* eigval, int *la ) {
 
     for(int i = 1; i <= *la; i++) {
 
-        const double sinus = sin((double) i * M_PI / (2.0 * (*la +  1)));
-
-        eigval[i] = 4.0 * sinus * sinus;
-
+        eigval[i] = 2.0 - 2.0*cos(i * M_PI / (*la +1));
     }
 }
 
 
 // Computes the maximum eigval of a Poisson1D of size la*la
-double eigmax_poisson1D(int *la){
+double eigmax_poisson1D ( int *la ) {
 
-    const double sinus = sin(*la * M_PI / (2.0*(*la + 1)));
-
-    return 4.0 * sinus * sinus;
+    return 2.0 - 2.0*cos(*la * M_PI / (*la +1));
 }
 
 
 // Computes the minimum eigval of a Poisson1D of size la*la
-double eigmin_poisson1D(int *la){
+double eigmin_poisson1D ( int *la ) {
 
-    const double sinus = sin(M_PI / ( 2.0 * (*la + 1)) );
-
-    return 4.0 * sinus * sinus;
+    return 2.0 - 2.0*cos( M_PI / (*la +1));
 }
 
 
 // Computes optimum alpha for our problem of size la*la
-double richardson_alpha_opt(int *la){
+double richardson_alpha_opt ( int *la ) {
 
     return 2.0 / (eigmax_poisson1D(la) + eigmin_poisson1D(la));
 }
 
 
 // Resolves a linear system with Richardson alpha method
-void richardson_alpha(double *AB, double *RHS, double *X, double *alpha_rich, int *lab, int *la,int *ku, int*kl, double *tol, int *maxit, double *resvec, int *nbite){
+int richardson_alpha ( double *AB, double *RHS, double *X, double *alpha_rich, int *lab, int *la, int *ku, int*kl, double *tol, int *maxit, double *resvec, int *nbite ) {
 
-    *nbite = 0;
+    int ret = 0;
 
-    double *tmp = aligned_alloc(32, *la * sizeof(double));
-    cblas_dcopy(*la, RHS, 1, tmp, 1);
+    if      (AB == NULL)  {
+        ret = -1;
+    }
+    else if (RHS == NULL) {
+        ret = -2;
+    }
+    else if (X == NULL)   {
+        ret = -3;
+    }
+    else if (*lab < *ku + *kl + 1) {
+        ret = -5;
+    }
+    else if (*la <= 0) {
+        ret = -6;
+    }
+    else if (*ku < 0) {
+        ret = -7;
+    }
+    else if (*kl < 0) {
+        ret = -8; 
+    }
+    else if (resvec == NULL) {
+        ret = -11;
+    }
 
-    // Compute first res
-    cblas_dgbmv(CblasColMajor, CblasNoTrans, *la, *la, *kl, *ku, -1.0, AB, *lab, X, 1, 1.0, tmp, 1);
-    resvec[*nbite] = cblas_dnrm2(*la, tmp, 1) / cblas_dnrm2(*la, RHS, 1); 
+    else {
+        *nbite = 0;
 
-    while(resvec[*nbite] > *tol && *nbite < *maxit) {
-
-        // If the method doesn't converge return an error
-        if(*nbite > 1 && resvec[*nbite] > resvec[*nbite - 1]) {
-            *nbite = -1;
-            break;
-        } 
-
-        // Compute an iteration
-        cblas_daxpy(*la, *alpha_rich, tmp, 1, X, 1); 
-
-        // Compute the res
-        (*nbite)++;
+        double *tmp = (double*) aligned_alloc(32, *la * sizeof(double));
+        if(tmp == NULL) {
+            perror("alloc richardson");
+            exit(ERR_ALLOC);
+        }
 
         cblas_dcopy(*la, RHS, 1, tmp, 1);
 
+        // Compute first res
         cblas_dgbmv(CblasColMajor, CblasNoTrans, *la, *la, *kl, *ku, -1.0, AB, *lab, X, 1, 1.0, tmp, 1);
-        resvec[*nbite] = cblas_dnrm2(*la, tmp, 1) / cblas_dnrm2(*la, RHS, 1);
+        resvec[*nbite] = cblas_dnrm2(*la, tmp, 1) / cblas_dnrm2(*la, RHS, 1); 
+
+        while(resvec[*nbite] > *tol && *nbite < *maxit) {
+
+            // If the method doesn't converge return an error
+            if(*nbite > 1 && resvec[*nbite] > resvec[*nbite - 1]) {
+                *nbite = -1;
+                break;
+            } 
+
+            // Compute an iteration
+            cblas_daxpy(*la, *alpha_rich, tmp, 1, X, 1); 
+
+            // Compute the res
+            (*nbite)++;
+
+            cblas_dcopy(*la, RHS, 1, tmp, 1);
+
+            cblas_dgbmv(CblasColMajor, CblasNoTrans, *la, *la, *kl, *ku, -1.0, AB, *lab, X, 1, 1.0, tmp, 1);
+            resvec[*nbite] = cblas_dnrm2(*la, tmp, 1) / cblas_dnrm2(*la, RHS, 1);
+        }
+
+        free(tmp);
     }
 
-    free(tmp);
-
+    return ret;
 }
 
 
 // Computes and returns MB = D = A+E+F
-void extract_MB_jacobi_tridiag(double *AB, double *MB, int *lab, int *la,int *ku, int*kl, int *kv){
+int extract_MB_jacobi_tridiag ( double *AB, double *MB, int *lab, int *la, int *ku, int*kl, int *kv ) {
 
-    const int d = *lab - *kl - 1;
-    for(int i = 0; i < *la * *lab; i++) {
+    int ret = 0;
 
-        MB[i] = 0.0;
-
+    // Error handling
+    if      (AB == NULL)  {
+        ret = -1;
+    }
+    else if (MB == NULL) {
+        ret = -2;
+    }
+    else if (*lab != *kv + *ku + *kl + 1 || *lab < 1) {
+        ret = -3;
+    }
+    else if (*la <= 0) {
+        ret = -4;
+    }
+    else if (*ku < 0) {
+        ret = -5;
+    }
+    else if (*kl < 0) {
+        ret = -6; 
+    }
+    else if (*kv < 0) {
+        ret = -7; 
     }
 
-    for(int i = d; i < *la * *lab; i += *lab) {
+    else {
 
-        MB[i] = AB[i];
+        for(int i = 0; i < *la; i++) {
+            for(int j = 0; j < *lab; j++) {
 
+                if(j == *kv + *kl) {
+                    MB[i * *lab + j] = AB[i * *lab + j];
+                }
+                else {
+                    MB[i * *lab + j] = 0.0;
+                }
+            }
+        }
     }
 
+    return ret;
 }
 
 
 // Computes and returns MB = D-E = A+F
-void extract_MB_gauss_seidel_tridiag(double *AB, double *MB, int *lab, int *la,int *ku, int*kl, int *kv){
+int extract_MB_gauss_seidel_tridiag ( double *AB, double *MB, int *lab, int *la, int *ku, int*kl, int *kv ) {
 
-    const int d = *lab - *kl - 1;
-    for(int i = 0; i < *la * *lab; i++) {
+    int ret = 0;
 
-        const int mod = i % *lab;
+    // Error handling
+    if      (AB == NULL)  {
+        ret = -1;
+    }
+    else if (MB == NULL) {
+        ret = -2;
+    }
+    else if (*lab != *kv + *ku + *kl + 1 || *lab < 1) {
+        ret = -3;
+    }
+    else if (*la <= 0) {
+        ret = -4;
+    }
+    else if (*ku < 0) {
+        ret = -5;
+    }
+    else if (*kl < 0) {
+        ret = -6; 
+    }
+    else if (*kv < 0) {
+        ret = -7; 
+    }
 
-        if(mod >= d) {
+    else {
 
-            MB[i] = AB[i];
+        for(int i = 0; i < *la; i++) {
+            for(int j = 0; j < *lab; j++) {
 
-        }
-        else {
+                if(j >= *kv + *kl) {
 
-            MB[i] = 0.0;
+                    MB[i * *lab + j] = AB[i * *lab + j];
 
+                }
+                else {
+
+                    MB[i * *lab + j] = 0.0;
+                }
+
+            }
         }
     }
+    return ret;
 }
 
 
 // Resolves a linear system in GB with Richardson general method
-void richardson_MB(double *AB, double *RHS, double *X, double *MB, int *lab, int *la,int *ku, int*kl, double *tol, int *maxit, double *resvec, int *nbite){
+int richardson_MB ( double *AB, double *RHS, double *X, double *MB, int *lab, int *la,int *ku, int*kl, double *tol, int *maxit, double *resvec, int *nbite ) {
+    int ret = 0;
 
-    int *ipiv = (int *) calloc(*la, sizeof(int));
-    int info = 0;
-    const int kuMB = *ku - 1;
-
-    double *MBtr = aligned_alloc(32, *la * *lab *sizeof(double));
-
-    // Compute MBtr = L*U = MB 
-    cblas_dcopy(*la * *lab, MB, 1, MBtr, 1);
-
-    dgbtrf_(la, la, kl, &kuMB, MBtr, lab, ipiv, &info); 
-
-    // MB := M - A in General Band
-    cblas_daxpy(*la * *lab, -1.0, AB, 1, MB, 1);
-
-    *nbite = 0;
-
-    double *tmp = aligned_alloc(32, *la * sizeof(double));
-
-    cblas_dcopy(*la, RHS, 1, tmp, 1);
-
-    // Compute first res
-    cblas_dgbmv(CblasColMajor, CblasNoTrans, *la, *la, *kl, *ku, -1.0, AB, *lab, X, 1, 1.0, tmp, 1);
-
-    resvec[*nbite] = cblas_dnrm2(*la, tmp, 1) / cblas_dnrm2(*la, RHS, 1); 
-
-    int NRHS = 1;
-
-
-    while(resvec[*nbite] > *tol && *nbite < *maxit) {
-
-        // If the method doesn't converge return an error
-        if(*nbite > 1 && resvec[*nbite] >= resvec[*nbite - 1]) {
-            *nbite = -1;
-            break;
-        } 
-
-        // Compute b + (M-A) * x^(i) the RHS of our linear system
-        cblas_dcopy(*la, RHS, 1, tmp, 1);
-
-        cblas_dgbmv(CblasColMajor, CblasNoTrans, *la, *la, *kl, *kl, 1.0, MB, *lab, X, 1, 1.0, tmp, 1);
-
-        // Resolve M x^(i+1) = b + (M-A) * x^(i)
-        cblas_dcopy(*la, tmp, 1, X, 1);
-
-        dgbtrs_("N", la, kl, &kuMB, &NRHS, MBtr, lab, ipiv, X, la, &info); 
-
-
-        // Compute the res
-        (*nbite)++;
-
-        cblas_dcopy(*la, RHS, 1, tmp, 1);
-
-        cblas_dgbmv(CblasColMajor, CblasNoTrans, *la, *la, *kl, *ku, -1.0, AB, *lab, X, 1, 1.0, tmp, 1);
-        resvec[*nbite] = cblas_dnrm2(*la, tmp, 1) / cblas_dnrm2(*la, RHS, 1);
+    // Error handling
+    if      (AB == NULL)  {
+        ret = -1;
+    }
+    else if (RHS == NULL) {
+        ret = -2;
+    }
+    else if (X == NULL)   {
+        ret = -3;
+    }
+    else if (MB == NULL) {
+        ret = -4;
+    }
+    else if (*lab < *ku + *kl + 1 || *lab < 1) {
+        ret = -5;
+    }
+    else if (*la <= 0) {
+        ret = -6;
+    }
+    else if (*ku < 0) {
+        ret = -7;
+    }
+    else if (*kl < 0) {
+        ret = -8; 
+    }
+    else if (resvec == NULL) {
+        ret = -11;
     }
 
-    free(MBtr);
-    free(tmp);
-    free(ipiv);
+    else {
+
+        int *ipiv = (int *) calloc(*la, sizeof(int));
+        if(ipiv == NULL) {
+            perror("alloc richardson");
+            exit(ERR_ALLOC);
+        }
+
+        int info = 0;
+        const int kuMB = *ku - 1;
+
+        double *MBtr = aligned_alloc(32, *la * *lab *sizeof(double));
+        if(MBtr == NULL) {
+            perror("alloc richardson");
+            exit(ERR_ALLOC);
+        }
+
+        // Compute MBtr = L*U = MB 
+        cblas_dcopy(*la * *lab, MB, 1, MBtr, 1);
+
+        dgbtrf_(la, la, kl, &kuMB, MBtr, lab, ipiv, &info); 
+        if(info != 0) {
+            perror("dgbtrf richarson");
+            exit(info);
+        }
+
+        // MB := M - A in General Band
+        cblas_daxpy(*la * *lab, -1.0, AB, 1, MB, 1);
+
+        *nbite = 0;
+
+        double *tmp = aligned_alloc(32, *la * sizeof(double));
+        if(tmp == NULL) {
+            perror("alloc richardson");
+            exit(ERR_ALLOC);
+        }
+
+        cblas_dcopy(*la, RHS, 1, tmp, 1);
+
+        // Compute first res
+        cblas_dgbmv(CblasColMajor, CblasNoTrans, *la, *la, *kl, *ku, -1.0, AB, *lab, X, 1, 1.0, tmp, 1);
+
+        resvec[*nbite] = cblas_dnrm2(*la, tmp, 1) / cblas_dnrm2(*la, RHS, 1); 
+
+        int NRHS = 1;
+
+        while(resvec[*nbite] > *tol && *nbite < *maxit) {
+
+            // If the method doesn't converge return an error
+            if(*nbite > 1 && resvec[*nbite] >= resvec[*nbite - 1]) {
+                *nbite = -1;
+                break;
+            } 
+
+            // Compute b + (M-A) * x^(i) the RHS of our linear system
+            cblas_dcopy(*la, RHS, 1, tmp, 1);
+
+            cblas_dgbmv(CblasColMajor, CblasNoTrans, *la, *la, *kl, *kl, 1.0, MB, *lab, X, 1, 1.0, tmp, 1);
+
+            // Resolve M x^(i+1) = b + (M-A) * x^(i)
+            cblas_dcopy(*la, tmp, 1, X, 1);
+
+            dgbtrs_("N", la, kl, &kuMB, &NRHS, MBtr, lab, ipiv, X, la, &info); 
+            if(info != 0) {
+                perror("dgbtrf richarson");
+                exit(info);
+            }
+
+            // Compute the res
+            (*nbite)++;
+
+            cblas_dcopy(*la, RHS, 1, tmp, 1);
+
+            cblas_dgbmv(CblasColMajor, CblasNoTrans, *la, *la, *kl, *ku, -1.0, AB, *lab, X, 1, 1.0, tmp, 1);
+            resvec[*nbite] = cblas_dnrm2(*la, tmp, 1) / cblas_dnrm2(*la, RHS, 1);
+        }
+
+        free(MBtr);
+        free(tmp);
+        free(ipiv);
+    }
+
+    return ret;
 }
 
 
